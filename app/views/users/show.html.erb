@@ -8,7 +8,8 @@
     </td>
     <td class="sidebar round">
       <strong>Name</strong> <%= @user.name %><br />
-      <strong>URL</strong>  <%= link_to user_path(@user), @user %>
+      <strong>URL</strong>  <%= link_to user_path(@user), @user %><br />
+      <strong>Last Account Activity:<br><%= @user.lastlogin %> </strong>
     </td>
   </tr>
 </table>

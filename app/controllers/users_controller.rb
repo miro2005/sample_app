@@ -12,6 +12,8 @@ class UsersController < ApplicationController
   
   def create
     @user = User.new(params[:user])
+    @user.lastlogin = 0.years.from_now
+    @user.currentlogin = 0.years.from_now
     if @user.save
       # Handle a successful save.
       sign_in @user

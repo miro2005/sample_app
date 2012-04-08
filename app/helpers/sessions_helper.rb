@@ -4,6 +4,11 @@ module SessionsHelper
     cookies.permanent.signed[:remember_token] = [user.id, user.salt]
     self.current_user = user
   end
+  #HW9.1 Signs out when browser is closed
+  def sign_in_temp(user)
+    cookies.signed[:remember_token] = [user.id, user.salt]
+    self.current_user = user
+  end
   
   def current_user=(user)
     @current_user = user
