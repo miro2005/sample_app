@@ -8,7 +8,9 @@
     </td>
     <td class="sidebar round">
       <strong>Name</strong> <%= @user.name %><br />
-      <strong>URL</strong>  <%= link_to user_path(@user), @user %>
+      <strong>URL</strong>  <%= link_to user_path(@user), @user %><br />
+      <!--Added for HW10 -->
+      <strong>Public?</strong>  <% if @user.public %>Yes <% else %> No <% end %>
     </td>
   </tr>
 </table>

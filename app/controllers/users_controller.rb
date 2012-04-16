@@ -34,6 +34,9 @@ class UsersController < ApplicationController
   
   def update
     @user = User.find(params[:id])
+    #HW10 #1, set make public flag?
+    @user.update_attributes(:password => params[:user][:password],
+                              :public => params[:public])
     if @user.update_attributes(params[:user])
       flash[:success] = "Profile updated."
       redirect_to @user
