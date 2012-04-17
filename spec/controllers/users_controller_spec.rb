@@ -1,3 +1,13 @@
+# HW10 #2: Add new RSpec tests to verify the following:
+
+#1: Users can mark their profiles (/users/n/edit) public or private
+#2: Users who are signed in can see all user profiles (/users/n)
+#3: Users who are not signed in can see only public profiles
+#4: Users who are signed in can see the list of all users (/users/)
+#5: Users who are not signed can access the list of all users 'who are public'
+#But for users who are not signed in, the list of all users contains only users whose profiles are public
+
+
 require 'spec_helper'
 
 describe UsersController do
@@ -6,10 +16,54 @@ describe UsersController do
   describe "GET 'index'" do
 
     describe "for non-signed-in users" do
-      it "should deny access" do
+      #it "should deny access" do
+      #  get :index
+      #  response.should redirect_to(signin_path)
+      #  flash[:notice].should =~ /sign in/i
+      #end
+      
+      #HW10 #2, part5: Users who are signed in can see all public user profiles
+      before(:each) do
+        #@user = test_sign_in(Factory(:user))
+        first  = Factory(:user, :name => "Bobby", :email => "another@example.org", :public => false)
+        second = Factory(:user, :name => "Bob", :email => "another@example.com", :public => true)
+        third  = Factory(:user, :name => "Ben", :email => "another@example.net", :public => false)
+
+        @users = [first, second, third]
+        30.times do
+          @users << Factory(:user, :name => Factory.next(:name),
+                                   :email => Factory.next(:email),
+                                   :public => true)
+        end
+      end
+
+      it "should be successful" do
         get :index
-        response.should redirect_to(signin_path)
-        flash[:notice].should =~ /sign in/i
+        response.should be_success
+      end
+
+      it "should have the right title" do
+        get :index
+        response.should have_selector("title", :content => "All PUBLIC users")
+      end
+      
+      it "should have an element for each PUBLIC user" do
+        get :index
+        @users[0..2].each do |user|
+          if(user.public == true)
+              response.should have_selector("li", :content => user.name)
+          end      
+        end
+      end
+
+      it "should paginate users" do
+        get :index
+        response.should have_selector("div.pagination")
+        response.should have_selector("span.disabled", :content => "Previous")
+        response.should have_selector("a", :href => "/users?page=2",
+                                           :content => "2")
+        response.should have_selector("a", :href => "/users?page=2",
+                                           :content => "Next")
       end
     end
 
@@ -37,6 +91,7 @@ describe UsersController do
         response.should have_selector("title", :content => "All users")
       end
       
+      #HW10 #2, part4: Users who are signed in can see the list of all users (/users/)
       it "should have an element for each user" do
         get :index
         @users[0..2].each do |user|
@@ -57,34 +112,79 @@ describe UsersController do
   end
   
   describe "GET 'show'" do
-
-    before(:each) do
-      @user = Factory(:user)
-    end
-
-    it "should be successful" do
-      get :show, :id => @user
-      response.should be_success
-    end
-
-    it "should find the right user" do
-      get :show, :id => @user
-      assigns(:user).should == @user
-    end
+    #HW10 #2, part2: Users who are signed in can see all user profiles (/users/n)
+    describe "for signed-in users" do
     
-    it "should have the right title" do
-      get :show, :id => @user
-      response.should have_selector("title", :content => @user.name)
+      before(:each) do
+        @user = test_sign_in(Factory(:user))
+        second = Factory(:user, :name => "Bob", :email => "another@example.com")
+        third  = Factory(:user, :name => "Ben", :email => "another@example.net")
+
+        @users = [@user, second, third]
+        30.times do
+          @users << Factory(:user, :name => Factory.next(:name),
+                                   :email => Factory.next(:email))
+        end
+      end
+    
+      it "should be successful" do
+        get :show, :id => @user
+        response.should be_success
+      end
+
+      it "should find the right user" do
+        get :show, :id => @user
+        assigns(:user).should == @user
+      end
+      
+      it "should have the right title" do
+        get :show, :id => @user
+        response.should have_selector("title", :content => @user.name)
+      end
+
+      it "should include the user's name" do
+        get :show, :id => @user
+        response.should have_selector("h1", :content => @user.name)
+      end
+
+      it "should have a profile image" do
+        get :show, :id => @user
+        response.should have_selector("h1>img", :class => "gravatar")
+      end
     end
 
-    it "should include the user's name" do
-      get :show, :id => @user
-      response.should have_selector("h1", :content => @user.name)
-    end
+    #HW10 #2, part3: Users who are not signed in can see only public profiles
+    describe "for non-signed-in users" do
 
-    it "should have a profile image" do
-      get :show, :id => @user
-      response.should have_selector("h1>img", :class => "gravatar")
+      before(:each) do
+        @user = Factory(:user)
+      end
+
+      it "should be successful" do
+        get :show, :id => @user
+        response.should be_success
+      end
+
+      it "should find the right user" do
+        get :show, :id => @user
+        assigns(:user).should == @user
+      end
+      
+      it "should have the right title" do
+        get :show, :id => @user
+        response.should have_selector("title", :content => @user.name)
+      end
+
+      it "should include the user's name" do
+        get :show, :id => @user
+        response.should have_selector("h1", :content => @user.name)
+      end
+
+      it "should have a profile image" do
+        get :show, :id => @user
+        response.should have_selector("h1>img", :class => "gravatar")
+      end
+      
     end
   end
 
@@ -116,6 +216,12 @@ describe UsersController do
     it "should have the right title" do
       get :edit, :id => @user
       response.should have_selector("title", :content => "Edit user")
+    end
+    
+    #HW10 #2, part1: Users can mark their profiles (/users/n/edit) public or private
+    it "should allow users to mark their profiles public or private" do
+      get :edit, :id => @user
+      response.should have_selector("input", :name => "public")
     end
 
     it "should have a link to change the Gravatar" do
