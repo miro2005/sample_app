@@ -49,6 +49,11 @@ class User < ActiveRecord::Base
     #following line is the same as the last 2 lines combined
     #(user && user.salt == cookie_salt) ? user : nil
   end
+  
+  def feed
+    # This is preliminary. See Chapter 12 for the full implementation.
+    Micropost.where("user_id = ?", id)
+  end
 
   private
 
