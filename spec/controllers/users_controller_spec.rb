@@ -16,20 +16,14 @@ describe UsersController do
   describe "GET 'index'" do
 
     describe "for non-signed-in users" do
-      #it "should deny access" do
-      #  get :index
-      #  response.should redirect_to(signin_path)
-      #  flash[:notice].should =~ /sign in/i
-      #end
       
-      #HW10 #2, part5: Users who are signed in can see all public user profiles
+      #HW10 #2, part5: Users who are not signed in can see the list of public user profiles
       before(:each) do
-        #@user = test_sign_in(Factory(:user))
-        first  = Factory(:user, :name => "Bobby", :email => "another@example.org", :public => false)
-        second = Factory(:user, :name => "Bob", :email => "another@example.com", :public => true)
-        third  = Factory(:user, :name => "Ben", :email => "another@example.net", :public => false)
+        @first  = Factory(:user, :name => "Bob", :email => "another@example.org", :public => true)
+        @second = Factory(:user, :name => "Noname", :email => "another@example.com", :public => false)
+        @third  = Factory(:user, :name => "Ben", :email => "another@example.net", :public => true)
 
-        @users = [first, second, third]
+        @users = [@first, @second, @third]
         30.times do
           @users << Factory(:user, :name => Factory.next(:name),
                                    :email => Factory.next(:email),
@@ -44,16 +38,14 @@ describe UsersController do
 
       it "should have the right title" do
         get :index
-        response.should have_selector("title", :content => "All PUBLIC users")
+        response.should have_selector("title", :content => "All public users")
       end
       
-      it "should have an element for each PUBLIC user" do
+      it "should have an element for each public user" do
         get :index
-        @users[0..2].each do |user|
-          if(user.public == true)
-              response.should have_selector("li", :content => user.name)
-          end      
-        end
+        response.should have_selector("li", :content => @first.name)
+        response.should_not have_selector("li", :content => @second.name)
+        response.should have_selector("li", :content => @third.name)
       end
 
       it "should paginate users" do
@@ -71,8 +63,8 @@ describe UsersController do
 
       before(:each) do
         @user = test_sign_in(Factory(:user))
-        second = Factory(:user, :name => "Bob", :email => "another@example.com")
-        third  = Factory(:user, :name => "Ben", :email => "another@example.net")
+        second = Factory(:user, :name => "Bob", :email => "another@example.com", :public => false)
+        third  = Factory(:user, :name => "Ben", :email => "another@example.net", :public => false)
 
         @users = [@user, second, third]
         30.times do
@@ -117,8 +109,8 @@ describe UsersController do
     
       before(:each) do
         @user = test_sign_in(Factory(:user))
-        second = Factory(:user, :name => "Bob", :email => "another@example.com")
-        third  = Factory(:user, :name => "Ben", :email => "another@example.net")
+        second = Factory(:user, :name => "Bob", :email => "another@example.com", :public => true)
+        third  = Factory(:user, :name => "Ben", :email => "another@example.net", :public => false)
 
         @users = [@user, second, third]
         30.times do
@@ -128,63 +120,88 @@ describe UsersController do
       end
     
       it "should be successful" do
-        get :show, :id => @user
-        response.should be_success
+        @users.each do |user|
+          get :show, :id => user
+          response.should be_success
+        end
       end
 
       it "should find the right user" do
-        get :show, :id => @user
-        assigns(:user).should == @user
+        @users.each do |user|
+          get :show, :id => user
+          assigns(:user).should == user
+        end
       end
       
       it "should have the right title" do
-        get :show, :id => @user
-        response.should have_selector("title", :content => @user.name)
+        @users.each do |user|
+          get :show, :id => user
+          response.should have_selector("title", :content => user.name)
+        end
       end
 
       it "should include the user's name" do
-        get :show, :id => @user
-        response.should have_selector("h1", :content => @user.name)
+        @users.each do |user|
+          get :show, :id => user
+          response.should have_selector("h1", :content => user.name)
+        end 
       end
 
       it "should have a profile image" do
-        get :show, :id => @user
-        response.should have_selector("h1>img", :class => "gravatar")
+        @users.each do |user|
+          get :show, :id => user
+          response.should have_selector("h1>img", :class => "gravatar")
+        end  
       end
     end
 
     #HW10 #2, part3: Users who are not signed in can see only public profiles
     describe "for non-signed-in users" do
+      describe "for public profiles" do
+        before(:each) do
+          @user  = Factory(:user, :name => "Bobby", :email => "another@example.org", :public => true)
+        end
 
-      before(:each) do
-        @user = Factory(:user)
-      end
+        it "should be successful" do
+          get :show, :id => @user
+          response.should be_success
+        end
 
-      it "should be successful" do
-        get :show, :id => @user
-        response.should be_success
-      end
+        it "should find the right user" do
+          get :show, :id => @user
+          assigns(:user).should == @user
+        end
+        
+        it "should have the right title" do
+          get :show, :id => @user
+          response.should have_selector("title", :content => @user.name)
+        end
 
-      it "should find the right user" do
-        get :show, :id => @user
-        assigns(:user).should == @user
-      end
-      
-      it "should have the right title" do
-        get :show, :id => @user
-        response.should have_selector("title", :content => @user.name)
-      end
+        it "should include the user's name" do
+          get :show, :id => @user
+          response.should have_selector("h1", :content => @user.name)
+        end
 
-      it "should include the user's name" do
-        get :show, :id => @user
-        response.should have_selector("h1", :content => @user.name)
+        it "should have a profile image" do
+          get :show, :id => @user
+          response.should have_selector("h1>img", :class => "gravatar")
+        end
+        
       end
+    end
+    
+    describe "for non-signed-in users" do
+      describe "for private profiles" do
+        before(:each) do
+          @user  = Factory(:user, :name => "Bobby", :email => "another@example.org", :public => false)
+        end
 
-      it "should have a profile image" do
-        get :show, :id => @user
-        response.should have_selector("h1>img", :class => "gravatar")
-      end
-      
+        it "should deny access" do
+          get :show, :id => @user
+          response.should redirect_to(signin_path)
+          flash[:notice].should =~ /sign in/i
+        end  
+      end  
     end
   end
 

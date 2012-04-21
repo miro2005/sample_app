@@ -1,10 +1,13 @@
 class UsersController < ApplicationController
-  before_filter :authenticate, :only => [:index, :edit, :update, :destroy]
+  before_filter :authenticate, :only => [:edit, :update, :destroy]
   before_filter :correct_user, :only => [:edit, :update]
   before_filter :admin_user,   :only => :destroy
 
   def show
     @user = User.find(params[:id])
+    if not @user.public
+      authenticate 
+    end
     @title = @user.name
   end
 
@@ -47,13 +50,13 @@ class UsersController < ApplicationController
   end
   
   def index
-    @title = "All users"
-    @users = User.paginate(:page => params[:page])
-  end
-
-  def show
-    @user = User.find(params[:id])
-    @title = @user.name
+    if current_user
+      @title = "All users"
+      @users = User.paginate(:page => params[:page])
+    else
+      @title = "All public users"
+      @users = User.where(:public => true).paginate(:page => params[:page])
+    end
   end
   
   def destroy
